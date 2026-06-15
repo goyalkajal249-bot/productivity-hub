@@ -1,0 +1,1757 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Productivity Hub</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js">
+/* V3 Upgrade: History + Calendar */
+function saveHistory(){
+ const d=new Date().toISOString().slice(0,10);
+ appData.history=appData.history||{};
+ appData.history[d]={completed:getCompletedTasks(),pending:getPendingTasks(),completion:getCompletionPercentage()};
+ saveData();
+}
+
+function renderHeatmap(){
+ const heat=document.getElementById('heatmap');
+ if(!heat) return;
+ heat.innerHTML='';
+ for(let i=364;i>=0;i--){
+   const dt=new Date(); dt.setDate(dt.getDate()-i);
+   const key=dt.toISOString().slice(0,10);
+   const rec=(appData.history||{})[key];
+   const box=document.createElement('div');
+   box.style.height='16px'; box.style.borderRadius='3px';
+   box.style.background=rec ? (rec.completion>=100?'#166534':rec.completion>=50?'#22c55e':'#dc2626') : '#374151';
+   box.onclick=()=>{
+      const el=document.getElementById('dayStats');
+      el.innerHTML=rec ? `<h3>${key}</h3><p>Completed: ${rec.completed}</p><p>Pending: ${rec.pending}</p><p>Completion: ${rec.completion}%</p>` : 'No data';
+   };
+   heat.appendChild(box);
+ }
+}
+
+const calBtn=document.createElement('button');
+calBtn.innerHTML='<i class="fa fa-calendar"></i> Calendar';
+calBtn.onclick=()=>showPage('calendar');
+desktopNav.appendChild(calBtn);
+
+const oldUpdate=updateDashboard;
+updateDashboard=function(){
+ oldUpdate();
+ saveHistory();
+ renderHeatmap();
+}
+updateDashboard();
+
+
+/* ===== V4 ADVANCED ANALYTICS ===== */
+function getMonthlyStreak(){
+ let count=0;
+ const now=new Date();
+ const month=now.getMonth(), year=now.getFullYear();
+ Object.keys(appData.history||{}).forEach(d=>{
+   const x=new Date(d);
+   if(x.getMonth()===month && x.getFullYear()===year && (appData.history[d].completion||0)>0) count++;
+ });
+ return count;
+}
+
+function createV4Insights(){
+ let el=document.getElementById('v4Insights');
+ if(el) el.remove();
+
+ el=document.createElement('div');
+ el.id='v4Insights';
+ el.className='card';
+ el.innerHTML=`
+ <h3>🚀 Advanced Insights</h3>
+ <br>
+ <p>🏆 Best Category: <b>${getBestCategory()}</b></p><br>
+ <p>⚠️ Weakest Category: <b>${getWeakestCategory()}</b></p><br>
+ <p>🔥 Current Streak: <b>${appData.streaks.current}</b></p><br>
+ <p>🌙 Monthly Streak: <b>${getMonthlyStreak()}</b></p><br>
+ <p>📈 Productivity Score: <b>${getCompletionPercentage()}%</b></p>
+ `;
+ document.getElementById('dashboard').appendChild(el);
+}
+
+const v4OldUpdate = updateDashboard;
+updateDashboard = function(){
+ v4OldUpdate();
+ createV4Insights();
+};
+
+
+/* ===== V5 FINAL POLISH ===== */
+function getConsistencyScore(){
+ const completion=getCompletionPercentage();
+ const streak=appData.streaks?.current||0;
+ return Math.min(100, Math.round(completion*0.7 + Math.min(streak,30)));
+}
+
+function createV5Card(){
+ let el=document.getElementById('v5Card');
+ if(el) el.remove();
+
+ el=document.createElement('div');
+ el.id='v5Card';
+ el.className='card';
+ el.innerHTML=`
+ <h3>💎 V5 Performance Center</h3>
+ <br>
+ <p>Consistency Score: <b>${getConsistencyScore()}%</b></p><br>
+ <p>Total Tasks: <b>${getTotalTasks()}</b></p><br>
+ <p>Completed Tasks: <b>${getCompletedTasks()}</b></p><br>
+ <p>Pending Tasks: <b>${getPendingTasks()}</b></p><br>
+ <p>Best Streak: <b>${appData.streaks.best||0}</b></p>
+ `;
+ document.getElementById('dashboard').appendChild(el);
+}
+
+function dailyMaintenance(){
+ const today=new Date().toISOString().slice(0,10);
+ appData.lastOpen=today;
+ saveData();
+}
+
+const v5OldUpdate=updateDashboard;
+updateDashboard=function(){
+ v5OldUpdate();
+ dailyMaintenance();
+ createV5Card();
+};
+
+setTimeout(()=>updateDashboard(),100);
+
+</script>
+
+<style>
+
+:root{
+--bg:#0f172a;
+--card:#111827;
+--card2:#1f2937;
+--accent:#22c55e;
+--accent2:#3b82f6;
+--danger:#ef4444;
+--warning:#f59e0b;
+--text:#f8fafc;
+--muted:#94a3b8;
+--border:#334155;
+}
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:'Inter',sans-serif;
+}
+
+body{
+background:var(--bg);
+color:var(--text);
+min-height:100vh;
+}
+
+.container{
+padding:20px;
+padding-bottom:90px;
+}
+
+.topbar{
+display:flex;
+justify-content:space-between;
+align-items:center;
+margin-bottom:20px;
+}
+
+.logo{
+font-size:24px;
+font-weight:800;
+}
+
+.nav{
+display:flex;
+gap:10px;
+flex-wrap:wrap;
+margin-bottom:20px;
+}
+
+.nav button{
+border:none;
+padding:12px 18px;
+border-radius:12px;
+background:var(--card);
+color:white;
+cursor:pointer;
+transition:.3s;
+}
+
+.nav button.active{
+background:var(--accent);
+color:black;
+font-weight:700;
+}
+
+.page{
+display:none;
+}
+
+.page.active{
+display:block;
+}
+
+.cards-grid{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+gap:15px;
+}
+
+.card{
+background:var(--card);
+border:1px solid var(--border);
+border-radius:18px;
+padding:18px;
+}
+
+.card-title{
+color:var(--muted);
+font-size:14px;
+margin-bottom:10px;
+}
+
+.card-value{
+font-size:28px;
+font-weight:800;
+}
+
+.section-title{
+font-size:22px;
+font-weight:700;
+margin-bottom:15px;
+margin-top:10px;
+}
+
+.category-grid{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+gap:20px;
+}
+
+.input-group{
+margin-bottom:12px;
+}
+
+input,
+textarea,
+select{
+width:100%;
+padding:12px;
+background:var(--card2);
+border:1px solid var(--border);
+border-radius:12px;
+color:white;
+}
+
+textarea{
+resize:vertical;
+min-height:80px;
+}
+
+.btn{
+border:none;
+padding:12px;
+border-radius:12px;
+cursor:pointer;
+font-weight:700;
+background:var(--accent);
+width:100%;
+}
+
+.task-list{
+margin-top:20px;
+}
+
+.task-item{
+background:var(--card);
+border:1px solid var(--border);
+padding:15px;
+border-radius:14px;
+margin-bottom:10px;
+}
+
+.priority{
+padding:4px 10px;
+border-radius:30px;
+font-size:12px;
+font-weight:700;
+display:inline-block;
+margin-top:8px;
+}
+
+.low{
+background:#1e3a8a;
+}
+
+.medium{
+background:#92400e;
+}
+
+.high{
+background:#7f1d1d;
+}
+
+.progress{
+height:10px;
+background:#334155;
+border-radius:20px;
+overflow:hidden;
+}
+
+.progress-fill{
+height:100%;
+background:var(--accent);
+width:0%;
+}
+
+.bottom-nav{
+display:none;
+}
+
+@media(max-width:768px){
+
+.nav{
+display:none;
+}
+
+.bottom-nav{
+display:flex;
+position:fixed;
+bottom:0;
+left:0;
+right:0;
+background:#020617;
+padding:10px;
+justify-content:space-around;
+z-index:999;
+}
+
+.bottom-nav button{
+background:none;
+border:none;
+color:white;
+font-size:18px;
+}
+
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="topbar">
+<div class="logo">
+🚀 Productivity Hub
+</div>
+</div>
+
+<div class="nav" id="desktopNav"></div>
+
+<!-- DASHBOARD -->
+
+<div id="dashboard" class="page active">
+
+<h2 class="section-title">
+Dashboard
+</h2>
+
+<div class="cards-grid">
+
+<div class="card">
+<div class="card-title">Tasks Completed Today</div>
+<div class="card-value" id="completedToday">0</div>
+</div>
+
+<div class="card">
+<div class="card-title">Pending Tasks</div>
+<div class="card-value" id="pendingToday">0</div>
+</div>
+
+<div class="card">
+<div class="card-title">Completion %</div>
+<div class="card-value" id="completionRate">0%</div>
+</div>
+
+<div class="card">
+<div class="card-title">Current Streak</div>
+<div class="card-value" id="currentStreak">0</div>
+</div>
+
+<div class="card">
+<div class="card-title">Best Streak</div>
+<div class="card-value" id="bestStreak">0</div>
+</div>
+
+<div class="card">
+<div class="card-title">Weekly Performance</div>
+<div class="card-value" id="weeklyPerformance">0%</div>
+</div>
+
+</div>
+
+<br>
+
+<div class="card">
+<canvas id="comparisonChart"></canvas>
+</div>
+
+</div>
+<!-- CATEGORY PAGES -->
+
+<div id="study" class="page"></div>
+<div id="health" class="page"></div>
+<div id="english" class="page"></div>
+<div id="work" class="page"></div>
+<div id="habits" class="page"></div>
+<div id="calendar" class="page"><h2 class="section-title">Consistency Calendar</h2><div class="card"><div id="heatmap" style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px"></div></div><br><div class="card" id="dayStats">Click a day</div></div>
+
+</div>
+
+<div class="bottom-nav" id="mobileNav"></div>
+
+<script>
+
+const categories = [
+{
+id:"study",
+name:"Study",
+icon:"fa-book"
+},
+{
+id:"health",
+name:"Health",
+icon:"fa-heart"
+},
+{
+id:"english",
+name:"English & Skills",
+icon:"fa-language"
+},
+{
+id:"work",
+name:"Work",
+icon:"fa-briefcase"
+},
+{
+id:"habits",
+name:"Habits",
+icon:"fa-repeat"
+}
+];
+
+let appData = JSON.parse(
+localStorage.getItem("productivityHub")
+) || {
+tasks:{},
+history:{},
+streaks:{
+current:0,
+best:0
+}
+};
+
+function saveData(){
+localStorage.setItem(
+"productivityHub",
+JSON.stringify(appData)
+);
+}
+
+const desktopNav =
+document.getElementById("desktopNav");
+
+const mobileNav =
+document.getElementById("mobileNav");
+
+function createNavigation(){
+
+const dashboardBtn =
+document.createElement("button");
+
+dashboardBtn.innerHTML =
+`<i class="fa fa-chart-line"></i> Dashboard`;
+
+dashboardBtn.onclick =
+()=>showPage("dashboard");
+
+dashboardBtn.classList.add("active");
+
+desktopNav.appendChild(dashboardBtn);
+
+categories.forEach(cat=>{
+
+const btn =
+document.createElement("button");
+
+btn.innerHTML =
+`<i class="fa ${cat.icon}"></i> ${cat.name}`;
+
+btn.onclick=
+()=>showPage(cat.id);
+
+desktopNav.appendChild(btn);
+
+});
+
+const dashboardMobile =
+document.createElement("button");
+
+dashboardMobile.innerHTML=
+`<i class="fa fa-chart-line"></i>`;
+
+dashboardMobile.onclick=
+()=>showPage("dashboard");
+
+mobileNav.appendChild(
+dashboardMobile
+);
+
+categories.forEach(cat=>{
+
+const b =
+document.createElement("button");
+
+b.innerHTML=
+`<i class="fa ${cat.icon}"></i>`;
+
+b.onclick=
+()=>showPage(cat.id);
+
+mobileNav.appendChild(b);
+
+});
+
+}
+
+function showPage(id){
+
+document
+.querySelectorAll(".page")
+.forEach(page=>{
+page.classList.remove("active");
+});
+
+document
+.getElementById(id)
+.classList.add("active");
+
+document
+.querySelectorAll(".nav button")
+.forEach(btn=>{
+btn.classList.remove("active");
+});
+
+}
+
+function initializeCategories(){
+
+categories.forEach(cat=>{
+
+if(!appData.tasks[cat.id]){
+appData.tasks[cat.id]=[];
+}
+
+const page =
+document.getElementById(cat.id);
+
+page.innerHTML = `
+
+<h2 class="section-title">
+${cat.name}
+</h2>
+
+<div class="card">
+
+<div class="input-group">
+<input
+id="${cat.id}-task"
+placeholder="Task Name">
+</div>
+
+<div class="input-group">
+<textarea
+id="${cat.id}-notes"
+placeholder="Optional Notes">
+</textarea>
+</div>
+
+<div class="input-group">
+<select
+id="${cat.id}-priority">
+
+<option value="Low">
+Low
+</option>
+
+<option value="Medium">
+Medium
+</option>
+
+<option value="High">
+High
+</option>
+
+</select>
+</div>
+
+<div class="input-group">
+<input
+type="date"
+id="${cat.id}-date">
+</div>
+
+<button
+class="btn"
+onclick="addTask('${cat.id}')">
+
+Add Task
+
+</button>
+
+</div>
+
+<br>
+
+<div
+class="task-list"
+id="${cat.id}-tasks">
+</div>
+
+`;
+
+});
+
+}
+
+function addTask(category){
+
+const taskInput =
+document.getElementById(
+`${category}-task`
+);
+
+const notesInput =
+document.getElementById(
+`${category}-notes`
+);
+
+const priorityInput =
+document.getElementById(
+`${category}-priority`
+);
+
+const dateInput =
+document.getElementById(
+`${category}-date`
+);
+
+if(
+taskInput.value.trim()===""
+){
+return;
+}
+
+const task = {
+
+id:Date.now(),
+
+name:
+taskInput.value,
+
+notes:
+notesInput.value,
+
+priority:
+priorityInput.value,
+
+dueDate:
+dateInput.value,
+
+completed:false,
+
+created:
+new Date().toISOString(),
+
+completedDate:null
+
+};
+
+appData.tasks[category]
+.push(task);
+
+saveData();
+
+taskInput.value="";
+notesInput.value="";
+dateInput.value="";
+
+renderTasks(category);
+
+updateDashboard();
+
+}
+
+function deleteTask(
+category,
+id
+){
+
+appData.tasks[category] =
+appData.tasks[category]
+.filter(
+task=>task.id!==id
+);
+
+saveData();
+
+renderTasks(category);
+
+updateDashboard();
+
+}
+
+function toggleTask(
+category,
+id
+){
+
+const task =
+appData.tasks[category]
+.find(
+t=>t.id===id
+);
+
+if(!task)return;
+
+task.completed=
+!task.completed;
+
+task.completedDate=
+task.completed
+? new Date()
+.toISOString()
+: null;
+
+saveData();
+
+renderTasks(category);
+
+updateDashboard();
+
+}
+
+function renderTasks(
+category
+){
+
+const container =
+document.getElementById(
+`${category}-tasks`
+);
+
+container.innerHTML="";
+
+appData.tasks[category]
+.forEach(task=>{
+
+const div =
+document.createElement("div");
+
+div.className =
+"task-item";
+
+const p =
+task.priority.toLowerCase();
+
+div.innerHTML = `
+
+<input
+type="checkbox"
+${task.completed
+? "checked"
+: ""
+}
+onclick="
+toggleTask(
+'${category}',
+${task.id}
+)
+">
+
+<h3>
+${task.name}
+</h3>
+
+<p>
+${task.notes}
+</p>
+
+<span
+class="priority ${p}">
+${task.priority}
+</span>
+
+<br><br>
+
+<small>
+Created:
+${new Date(
+task.created
+).toLocaleDateString()}
+</small>
+
+<br><br>
+
+<button
+class="btn"
+onclick="
+deleteTask(
+'${category}',
+${task.id}
+)
+">
+Delete
+</button>
+
+`;
+
+container.appendChild(
+div
+);
+
+});
+
+}
+
+createNavigation();
+
+initializeCategories();
+
+categories.forEach(cat=>{
+renderTasks(cat.id);
+});
+
+
+/* ==========================
+   DASHBOARD ANALYTICS
+========================== */
+
+function getTotalTasks(){
+
+let total = 0;
+
+categories.forEach(cat=>{
+
+total += appData.tasks[cat.id].length;
+
+});
+
+return total;
+
+}
+
+function getCompletedTasks(){
+
+let completed = 0;
+
+categories.forEach(cat=>{
+
+completed += appData.tasks[cat.id]
+.filter(task=>task.completed)
+.length;
+
+});
+
+return completed;
+
+}
+
+function getPendingTasks(){
+
+return getTotalTasks() -
+getCompletedTasks();
+
+}
+
+function getCompletionPercentage(){
+
+const total = getTotalTasks();
+
+if(total===0) return 0;
+
+return Math.round(
+(getCompletedTasks()/total)*100
+);
+
+}
+
+function getCategoryProgress(category){
+
+const tasks =
+appData.tasks[category];
+
+if(!tasks.length) return 0;
+
+const completed =
+tasks.filter(t=>t.completed)
+.length;
+
+return Math.round(
+(completed/tasks.length)*100
+);
+
+}
+
+function getBestCategory(){
+
+let bestName = "None";
+let bestValue = 0;
+
+categories.forEach(cat=>{
+
+const progress =
+getCategoryProgress(cat.id);
+
+if(progress > bestValue){
+
+bestValue = progress;
+bestName = cat.name;
+
+}
+
+});
+
+return bestName;
+
+}
+
+function getWeakestCategory(){
+
+let weakestName = "None";
+let weakestValue = 101;
+
+categories.forEach(cat=>{
+
+const progress =
+getCategoryProgress(cat.id);
+
+if(progress < weakestValue){
+
+weakestValue = progress;
+weakestName = cat.name;
+
+}
+
+});
+
+return weakestName;
+
+}
+
+function calculateWeeklyPerformance(){
+
+return getCompletionPercentage();
+
+}
+
+function calculateCurrentStreak(){
+
+let streak = 0;
+
+const completedDates = [];
+
+categories.forEach(cat=>{
+
+appData.tasks[cat.id]
+.forEach(task=>{
+
+if(task.completedDate){
+
+completedDates.push(
+task.completedDate
+.slice(0,10)
+);
+
+}
+
+});
+
+});
+
+const uniqueDays =
+[...new Set(completedDates)]
+.sort()
+.reverse();
+
+let current =
+new Date();
+
+while(true){
+
+const day =
+current
+.toISOString()
+.slice(0,10);
+
+if(uniqueDays.includes(day)){
+
+streak++;
+
+current.setDate(
+current.getDate()-1
+);
+
+}else{
+
+break;
+
+}
+
+}
+
+appData.streaks.current =
+streak;
+
+if(
+streak >
+appData.streaks.best
+){
+
+appData.streaks.best =
+streak;
+
+}
+
+saveData();
+
+return streak;
+
+}
+
+function createProgressCards(){
+
+let html = `
+
+<br>
+
+<h2 class="section-title">
+Category Progress
+</h2>
+
+<div class="cards-grid">
+
+`;
+
+categories.forEach(cat=>{
+
+const progress =
+getCategoryProgress(cat.id);
+
+html += `
+
+<div class="card">
+
+<div class="card-title">
+${cat.name}
+</div>
+
+<div class="card-value">
+${progress}%
+</div>
+
+<br>
+
+<div class="progress">
+<div
+class="progress-fill"
+style="
+width:${progress}%">
+</div>
+</div>
+
+<br>
+
+<small>
+Improvement tracking
+coming in Part 6
+</small>
+
+</div>
+
+`;
+
+});
+
+html += "</div>";
+
+return html;
+
+}
+
+function updateDashboard(){
+
+document.getElementById(
+"completedToday"
+).innerText =
+getCompletedTasks();
+
+document.getElementById(
+"pendingToday"
+).innerText =
+getPendingTasks();
+
+document.getElementById(
+"completionRate"
+).innerText =
+getCompletionPercentage()+"%";
+
+document.getElementById(
+"weeklyPerformance"
+).innerText =
+calculateWeeklyPerformance()+"%";
+
+document.getElementById(
+"currentStreak"
+).innerText =
+calculateCurrentStreak();
+
+document.getElementById(
+"bestStreak"
+).innerText =
+appData.streaks.best;
+
+const dashboard =
+document.getElementById(
+"dashboard"
+);
+
+const oldSection =
+document.getElementById(
+"categoryProgressWrapper"
+);
+
+if(oldSection){
+
+oldSection.remove();
+
+}
+
+const wrapper =
+document.createElement("div");
+
+wrapper.id =
+"categoryProgressWrapper";
+
+wrapper.innerHTML =
+
+createProgressCards()
+
++
+
+`
+
+<br>
+
+<div class="card">
+
+<h3>
+📈 Productivity Insights
+</h3>
+
+<br>
+
+<p>
+🏆 Best Category:
+<b>
+${getBestCategory()}
+</b>
+</p>
+
+<br>
+
+<p>
+⚠ Weakest Category:
+<b>
+${getWeakestCategory()}
+</b>
+</p>
+
+<br>
+
+<p>
+✅ Completion Rate:
+<b>
+${getCompletionPercentage()}%
+</b>
+</p>
+
+</div>
+
+`;
+
+dashboard.appendChild(
+wrapper
+);
+
+updateComparisonChart();
+
+}
+
+let comparisonChart;
+
+function updateComparisonChart(){
+
+const ctx =
+document.getElementById(
+"comparisonChart"
+);
+
+const values =
+categories.map(cat=>
+getCategoryProgress(cat.id)
+);
+
+if(comparisonChart){
+
+comparisonChart.destroy();
+
+}
+
+comparisonChart =
+new Chart(ctx,{
+
+type:"bar",
+
+data:{
+
+labels:
+categories.map(
+c=>c.name
+),
+
+datasets:[{
+
+label:
+"Completion %",
+
+data:values
+
+}]
+
+},
+
+options:{
+
+responsive:true,
+
+plugins:{
+
+legend:{
+display:false
+}
+
+},
+
+scales:{
+
+y:{
+beginAtZero:true,
+max:100
+}
+
+}
+
+}
+
+});
+
+}
+
+updateDashboard();
+/* ==========================
+   SEARCH + FILTERS + EDIT
+========================== */
+
+function editTask(category,id){
+
+const task =
+appData.tasks[category]
+.find(t=>t.id===id);
+
+if(!task) return;
+
+const newName =
+prompt(
+"Edit Task Name",
+task.name
+);
+
+if(newName===null) return;
+
+const newNotes =
+prompt(
+"Edit Notes",
+task.notes
+);
+
+task.name = newName;
+task.notes = newNotes || "";
+
+saveData();
+
+renderTasks(category);
+
+updateDashboard();
+
+}
+
+function getPriorityClass(priority){
+
+switch(priority){
+
+case "High":
+return "high";
+
+case "Medium":
+return "medium";
+
+default:
+return "low";
+
+}
+
+}
+
+function addSearchUI(){
+
+categories.forEach(cat=>{
+
+const page =
+document.getElementById(cat.id);
+
+const card =
+page.querySelector(".card");
+
+const searchBox =
+document.createElement("input");
+
+searchBox.placeholder =
+"🔍 Search Tasks";
+
+searchBox.id =
+`${cat.id}-search`;
+
+searchBox.style.marginTop =
+"15px";
+
+searchBox.oninput = ()=>{
+
+renderTasks(cat.id);
+
+};
+
+card.appendChild(searchBox);
+
+const filter =
+document.createElement("select");
+
+filter.id =
+`${cat.id}-filter`;
+
+filter.style.marginTop =
+"10px";
+
+filter.innerHTML = `
+
+<option value="all">
+All Tasks
+</option>
+
+<option value="completed">
+Completed
+</option>
+
+<option value="pending">
+Pending
+</option>
+
+<option value="high">
+High Priority
+</option>
+
+<option value="medium">
+Medium Priority
+</option>
+
+<option value="low">
+Low Priority
+</option>
+
+`;
+
+filter.onchange = ()=>{
+
+renderTasks(cat.id);
+
+};
+
+card.appendChild(filter);
+
+});
+
+}
+
+const oldRenderTasks =
+renderTasks;
+
+renderTasks = function(category){
+
+const container =
+document.getElementById(
+`${category}-tasks`
+);
+
+container.innerHTML = "";
+
+const search =
+document
+.getElementById(
+`${category}-search`
+)?.value
+.toLowerCase() || "";
+
+const filter =
+document
+.getElementById(
+`${category}-filter`
+)?.value
+|| "all";
+
+let tasks =
+appData.tasks[category];
+
+tasks = tasks.filter(task=>{
+
+const matchesSearch =
+
+task.name
+.toLowerCase()
+.includes(search)
+
+||
+
+task.notes
+.toLowerCase()
+.includes(search);
+
+if(!matchesSearch)
+return false;
+
+switch(filter){
+
+case "completed":
+return task.completed;
+
+case "pending":
+return !task.completed;
+
+case "high":
+return task.priority==="High";
+
+case "medium":
+return task.priority==="Medium";
+
+case "low":
+return task.priority==="Low";
+
+default:
+return true;
+
+}
+
+});
+
+tasks.forEach(task=>{
+
+const div =
+document.createElement("div");
+
+div.className =
+"task-item";
+
+div.innerHTML = `
+
+<div style="
+display:flex;
+justify-content:space-between;
+align-items:center;
+gap:10px;
+">
+
+<div>
+
+<input
+type="checkbox"
+${task.completed
+? "checked"
+: ""}
+onclick="
+toggleTask(
+'${category}',
+${task.id}
+)
+">
+
+<strong>
+${task.name}
+</strong>
+
+</div>
+
+<span
+class="
+priority
+${getPriorityClass(task.priority)}
+">
+
+${task.priority}
+
+</span>
+
+</div>
+
+<br>
+
+<p>
+${task.notes || ""}
+</p>
+
+${
+task.dueDate
+?
+`
+<small>
+📅 Due:
+${task.dueDate}
+</small>
+`
+:
+""
+}
+
+<br><br>
+
+<small>
+Created:
+${new Date(
+task.created
+).toLocaleString()}
+</small>
+
+<br><br>
+
+<div style="
+display:flex;
+gap:10px;
+">
+
+<button
+class="btn"
+style="
+background:#3b82f6;
+">
+
+Edit
+
+</button>
+
+<button
+class="btn"
+style="
+background:#ef4444;
+">
+
+Delete
+
+</button>
+
+</div>
+
+`;
+
+const buttons =
+div.querySelectorAll("button");
+
+buttons[0].onclick =
+()=>editTask(
+category,
+task.id
+);
+
+buttons[1].onclick =
+()=>deleteTask(
+category,
+task.id
+);
+
+container.appendChild(div);
+
+});
+
+};
+
+addSearchUI();
+
+categories.forEach(cat=>{
+
+renderTasks(cat.id);
+
+});
+
+
+/* V3 Upgrade: History + Calendar */
+function saveHistory(){
+ const d=new Date().toISOString().slice(0,10);
+ appData.history=appData.history||{};
+ appData.history[d]={completed:getCompletedTasks(),pending:getPendingTasks(),completion:getCompletionPercentage()};
+ saveData();
+}
+
+function renderHeatmap(){
+ const heat=document.getElementById('heatmap');
+ if(!heat) return;
+ heat.innerHTML='';
+ for(let i=364;i>=0;i--){
+   const dt=new Date(); dt.setDate(dt.getDate()-i);
+   const key=dt.toISOString().slice(0,10);
+   const rec=(appData.history||{})[key];
+   const box=document.createElement('div');
+   box.style.height='16px'; box.style.borderRadius='3px';
+   box.style.background=rec ? (rec.completion>=100?'#166534':rec.completion>=50?'#22c55e':'#dc2626') : '#374151';
+   box.onclick=()=>{
+      const el=document.getElementById('dayStats');
+      el.innerHTML=rec ? `<h3>${key}</h3><p>Completed: ${rec.completed}</p><p>Pending: ${rec.pending}</p><p>Completion: ${rec.completion}%</p>` : 'No data';
+   };
+   heat.appendChild(box);
+ }
+}
+
+const calBtn=document.createElement('button');
+calBtn.innerHTML='<i class="fa fa-calendar"></i> Calendar';
+calBtn.onclick=()=>showPage('calendar');
+desktopNav.appendChild(calBtn);
+
+const oldUpdate=updateDashboard;
+updateDashboard=function(){
+ oldUpdate();
+ saveHistory();
+ renderHeatmap();
+}
+updateDashboard();
+
+
+/* ===== V4 ADVANCED ANALYTICS ===== */
+function getMonthlyStreak(){
+ let count=0;
+ const now=new Date();
+ const month=now.getMonth(), year=now.getFullYear();
+ Object.keys(appData.history||{}).forEach(d=>{
+   const x=new Date(d);
+   if(x.getMonth()===month && x.getFullYear()===year && (appData.history[d].completion||0)>0) count++;
+ });
+ return count;
+}
+
+function createV4Insights(){
+ let el=document.getElementById('v4Insights');
+ if(el) el.remove();
+
+ el=document.createElement('div');
+ el.id='v4Insights';
+ el.className='card';
+ el.innerHTML=`
+ <h3>🚀 Advanced Insights</h3>
+ <br>
+ <p>🏆 Best Category: <b>${getBestCategory()}</b></p><br>
+ <p>⚠️ Weakest Category: <b>${getWeakestCategory()}</b></p><br>
+ <p>🔥 Current Streak: <b>${appData.streaks.current}</b></p><br>
+ <p>🌙 Monthly Streak: <b>${getMonthlyStreak()}</b></p><br>
+ <p>📈 Productivity Score: <b>${getCompletionPercentage()}%</b></p>
+ `;
+ document.getElementById('dashboard').appendChild(el);
+}
+
+const v4OldUpdate = updateDashboard;
+updateDashboard = function(){
+ v4OldUpdate();
+ createV4Insights();
+};
+
+
+/* ===== V5 FINAL POLISH ===== */
+function getConsistencyScore(){
+ const completion=getCompletionPercentage();
+ const streak=appData.streaks?.current||0;
+ return Math.min(100, Math.round(completion*0.7 + Math.min(streak,30)));
+}
+
+function createV5Card(){
+ let el=document.getElementById('v5Card');
+ if(el) el.remove();
+
+ el=document.createElement('div');
+ el.id='v5Card';
+ el.className='card';
+ el.innerHTML=`
+ <h3>💎 V5 Performance Center</h3>
+ <br>
+ <p>Consistency Score: <b>${getConsistencyScore()}%</b></p><br>
+ <p>Total Tasks: <b>${getTotalTasks()}</b></p><br>
+ <p>Completed Tasks: <b>${getCompletedTasks()}</b></p><br>
+ <p>Pending Tasks: <b>${getPendingTasks()}</b></p><br>
+ <p>Best Streak: <b>${appData.streaks.best||0}</b></p>
+ `;
+ document.getElementById('dashboard').appendChild(el);
+}
+
+function dailyMaintenance(){
+ const today=new Date().toISOString().slice(0,10);
+ appData.lastOpen=today;
+ saveData();
+}
+
+const v5OldUpdate=updateDashboard;
+updateDashboard=function(){
+ v5OldUpdate();
+ dailyMaintenance();
+ createV5Card();
+};
+
+setTimeout(()=>updateDashboard(),100);
+
+</script>
+</body>
+</html>
